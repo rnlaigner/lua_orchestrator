@@ -5,7 +5,9 @@ import br.pucrio.inf.les.ese.lua_orchestrator.queue.TopicStrategy;
 import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class LuaTaskExecutor {
@@ -102,34 +104,51 @@ public class LuaTaskExecutor {
 
         List<Future<List>> futures = executor.invokeAll( luaTasks );
 
+        Map<String, Map<String,List<String>>> clients_client_elapsed_time_map = new HashMap<>();
+
         for( Future future : futures ){
 
-            // TODO montar informacoes retornadas
-            future.get();
+            List<String> result = (List<String>) future.get();
+
+            String client = result.get(0);
+
+            Map<String,List<String>> client_elapsed_time_map = new HashMap<>();
+
+            int numberOfMsgs = Integer.valueOf( num_messages );
+
+            for( int i = 1; i < result.size(); i = i + (numberOfMsgs * 3) ){
+
+                String client_client = result.get(i);
+                List<String> times = new ArrayList<>();
+
+                for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
+
+                    // String client_client = result.get(i);
+                    // String msg_idx = result.get(j+1);
+                    String time = result.get(j+2);
+
+                    //Integer msg_idx_int = Integer.valueOf( msg_idx );
+
+                    //times.add(msg_idx_int,time);
+                    times.add(time);
+
+                }
+
+                client_elapsed_time_map.put( client_client, times );
+
+            }
+
+            clients_client_elapsed_time_map.put( client,  client_elapsed_time_map );
 
         }
 
         executor.shutdown();
 
-        //boolean tasksEnded = executor.awaitTermination(1, TimeUnit.HOURS );
-        // boolean tasksEnded = executor.awaitTermination( 3, TimeUnit.MINUTES );
-
-//        while( ! executor.isTerminated() ){
-//
-//        }
-//        boolean tasksEnded = true;
-//
-//        if ( tasksEnded ) {
-//
-//            // TODO todos os tasks devem colocar seus respectivos outputs em uma tabela
-//
-//            // assim, eu posso colocar a tabela em um excel e realizar os calculos
-//
-//            System.out.println(""); // print contents
-//        }
-//        else {
-//            System.out.println("Timed out while waiting for tasks to finish.");
-//        }
+        /** TODO colocar stdout processado no excel
+         *
+         *  Ideal seria o Java ja realizar o calculo da media de tempo gasto pelo servidor e realizar o output do dado agregado
+         *
+         **/
 
     }
 

@@ -17,8 +17,6 @@ public class LuaTask implements Callable<List> {
     public List call() {
 
         List<String> stdOutList = new ArrayList<>();
-//        OutputStream stdin = null;
-//        InputStream stderr = null;
         InputStream stdout = null;
 
         // launch EXE and grab stdin/stdout and stderr
@@ -54,21 +52,17 @@ public class LuaTask implements Callable<List> {
 
             process.waitFor();
 
-            //stdin = process.getOutputStream();
-            //stderr = process.getErrorStream();
             stdout = process.getInputStream();
 
             try{
                 String line;
-                BufferedReader input =
-                        new BufferedReader
-                                (new InputStreamReader(stdout));
+                BufferedReader input = new BufferedReader(new InputStreamReader(stdout));
                 while ((line = input.readLine()) != null) {
-                    // System.out.println(line);
                     stdOutList.add(line);
                 }
                 input.close();
             } catch(Exception e){
+                e.printStackTrace();
                 return null;
             }
 

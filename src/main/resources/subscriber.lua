@@ -69,7 +69,7 @@ local error_message = nil
 
 local index = 1
 
-while (index < number_messages) do
+while (index <= number_messages) do
     error_message = mqtt_client:handler()
     socket.sleep(wait_per_message)
     --print("publishing message")
@@ -83,20 +83,16 @@ end
 
 -- TODO enquanto houver msgs a receber, devo chamar o handler
 
---mqtt_client:destroy()
 
---  return publishers
---io.write(publishers)
+socket.sleep(1)
+error_message = mqtt_client:handler()
 
-
---for idx, time in ipairs(client_info) do
---    print(idx)
---    print(time)
+--  TODO break no while true ate que nao haja mais mensagens por 5 segundos...
+--while true do
+--    break
 --end
 
-
 -- write time elapsed for each client message
-
 print(client_name)
 
 for idx, publisher_tbl in pairs(publishers) do
@@ -106,14 +102,4 @@ for idx, publisher_tbl in pairs(publishers) do
         print(msg)
     end
 end
-
---io.stdout.write(publishers)
-
---io.stdout.flush()
-
---io.stderr:write("Third stderr TEST\n")
-
---io.stderr.flush()
-
---print("finished")
 
