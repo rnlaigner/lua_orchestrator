@@ -2,6 +2,7 @@ package br.pucrio.inf.les.ese.lua_orchestrator;
 
 import br.pucrio.inf.les.ese.lua_orchestrator.exception.WrongNumberOfParams;
 import br.pucrio.inf.les.ese.lua_orchestrator.queue.TopicStrategy;
+import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class LuaTaskExecutor {
 
         int numberOfClients = Integer.valueOf( num_clients );
 
-        List<Callable<String>> luaTasks = new ArrayList<Callable<String>>();
+        List<Callable<List>> luaTasks = new ArrayList<Callable<List>>();
 
         TopicStrategy topicStrategy = TopicStrategy.ONE_TOPIC.getName().contentEquals( strategy ) ? TopicStrategy.ONE_TOPIC : TopicStrategy.ONE_TOPIC_PER_TEN ;
 
@@ -66,7 +67,6 @@ public class LuaTaskExecutor {
 
                 LuaTask luaTask = new LuaTask(params);
 
-                //executor.execute( luaTask );
                 luaTasks.add( luaTask );
 
             }
@@ -100,10 +100,11 @@ public class LuaTaskExecutor {
 
         }
 
-        List<Future<String>> futures = executor.invokeAll( luaTasks );
+        List<Future<List>> futures = executor.invokeAll( luaTasks );
 
         for( Future future : futures ){
 
+            // TODO montar informacoes retornadas
             future.get();
 
         }

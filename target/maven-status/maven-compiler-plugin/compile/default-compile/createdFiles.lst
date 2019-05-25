@@ -1,7 +1,0 @@
-br\pucrio\inf\les\ese\lua_orchestrator\LuaTaskExecutor.class
-br\pucrio\inf\les\ese\lua_orchestrator\Buffer.class
-br\pucrio\inf\les\ese\lua_orchestrator\Consumer.class
-br\pucrio\inf\les\ese\lua_orchestrator\LuaTask.class
-br\pucrio\inf\les\ese\lua_orchestrator\queue\TopicStrategy.class
-br\pucrio\inf\les\ese\lua_orchestrator\exception\WrongNumberOfParams.class
-br\pucrio\inf\les\ese\lua_orchestrator\Executor.class

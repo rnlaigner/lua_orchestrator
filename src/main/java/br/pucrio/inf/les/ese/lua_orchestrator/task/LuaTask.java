@@ -1,11 +1,11 @@
-package br.pucrio.inf.les.ese.lua_orchestrator;
+package br.pucrio.inf.les.ese.lua_orchestrator.task;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 
-public class LuaTask implements Callable<String> {
+public class LuaTask implements Callable<List> {
 
     public String params;
 
@@ -14,10 +14,11 @@ public class LuaTask implements Callable<String> {
     }
 
     @Override
-    public String call() {
+    public List call() {
 
-        OutputStream stdin = null;
-        InputStream stderr = null;
+        List<String> stdOutList = new ArrayList<>();
+//        OutputStream stdin = null;
+//        InputStream stderr = null;
         InputStream stdout = null;
 
         // launch EXE and grab stdin/stdout and stderr
@@ -53,17 +54,30 @@ public class LuaTask implements Callable<String> {
 
             process.waitFor();
 
-            stdin = process.getOutputStream();
-            stderr = process.getErrorStream();
+            //stdin = process.getOutputStream();
+            //stderr = process.getErrorStream();
             stdout = process.getInputStream();
 
-            // TODO return table with values
+            try{
+                String line;
+                BufferedReader input =
+                        new BufferedReader
+                                (new InputStreamReader(stdout));
+                while ((line = input.readLine()) != null) {
+                    // System.out.println(line);
+                    stdOutList.add(line);
+                }
+                input.close();
+            } catch(Exception e){
+                return null;
+            }
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+            return null;
         }
 
-        return null;
+        return stdOutList;
 
     }
 
