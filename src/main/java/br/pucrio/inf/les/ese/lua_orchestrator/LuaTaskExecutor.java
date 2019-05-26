@@ -106,6 +106,8 @@ public class LuaTaskExecutor {
 
         Map<String, Map<String,List<String>>> clients_client_elapsed_time_map = new HashMap<>();
 
+        int numberOfMsgs = Integer.valueOf( num_messages );
+
         for( Future future : futures ){
 
             List<String> result = (List<String>) future.get();
@@ -114,8 +116,6 @@ public class LuaTaskExecutor {
 
             Map<String,List<String>> client_elapsed_time_map = new HashMap<>();
 
-            int numberOfMsgs = Integer.valueOf( num_messages );
-
             for( int i = 1; i < result.size(); i = i + (numberOfMsgs * 3) ){
 
                 String client_client = result.get(i);
@@ -123,13 +123,7 @@ public class LuaTaskExecutor {
 
                 for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
 
-                    // String client_client = result.get(i);
-                    // String msg_idx = result.get(j+1);
                     String time = result.get(j+2);
-
-                    //Integer msg_idx_int = Integer.valueOf( msg_idx );
-
-                    //times.add(msg_idx_int,time);
                     times.add(time);
 
                 }
@@ -144,11 +138,64 @@ public class LuaTaskExecutor {
 
         executor.shutdown();
 
-        /** TODO colocar stdout processado no excel
-         *
-         *  Ideal seria o Java ja realizar o calculo da media de tempo gasto pelo servidor e realizar o output do dado agregado
-         *
-         **/
+        Map<String,List<Double>> client_average_time_map = new HashMap<>();
+
+        //  realiza o calculo da media de tempo gasto pelo servidor e realizar o output do dado agregado
+
+        for( Map.Entry<String,Map<String,List<String>>> client : clients_client_elapsed_time_map.entrySet() ){
+
+            String client_name = client.getKey();
+
+            // Map<String,List<String>> client_of_client_map = client.getValue();
+
+            List<Double> sum_of_client = new ArrayList<Double>() {{
+                for(int i = 0; i < numberOfMsgs; i++){
+                    add(0.0);
+                }
+            }};
+
+            // for each clients of client, get its respective time per message
+            for( Map.Entry<String,Map<String,List<String>>> client_of_client : clients_client_elapsed_time_map.entrySet() ){
+
+                if( client_of_client.getKey().contentEquals( client_name ) ){
+                    continue;
+                }
+
+                List<String> times_for_client_of_client = client_of_client.getValue().get( client_name );
+
+                int idx = 0;
+
+                for( String time : times_for_client_of_client ){
+
+                    Double time_d = Double.valueOf( time );
+
+                    Double currValue = sum_of_client.get( idx );
+
+                    sum_of_client.set( idx, currValue + time_d );
+
+                    idx++;
+
+                }
+
+            }
+
+            // aqui faco a media para cada mensagem enviada pelo cliente atual da iteracao
+            List<Double> average_time_list = new ArrayList<>(numberOfMsgs);
+
+            for( int i = 0; i < numberOfMsgs; i++ ){
+
+                Double value = sum_of_client.get(i) / (numberOfClients - 1);
+
+                average_time_list.add( i, value );
+
+            }
+
+            // adiciono em umap que possui o average time para cada mensagem enviada a partir deste cliente
+            client_average_time_map.put( client_name, average_time_list );
+
+        }
+
+        System.out.println("Finished");
 
     }
 

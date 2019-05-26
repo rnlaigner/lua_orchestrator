@@ -19,7 +19,6 @@ public class LuaTask implements Callable<List> {
         List<String> stdOutList = new ArrayList<>();
         InputStream stdout = null;
 
-        // launch EXE and grab stdin/stdout and stderr
         Process process = null;
 
         String projectPath = System.getProperty("user.dir");
