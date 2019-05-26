@@ -2,17 +2,18 @@ package br.pucrio.inf.les.ese.lua_orchestrator;
 
 import br.pucrio.inf.les.ese.lua_orchestrator.exception.WrongNumberOfParams;
 import br.pucrio.inf.les.ese.lua_orchestrator.queue.TopicStrategy;
+import br.pucrio.inf.les.ese.lua_orchestrator.report.Report;
+import br.pucrio.inf.les.ese.lua_orchestrator.report.WorkbookCreator;
 import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class LuaTaskExecutor {
 
-    public static void main( String[] args ) throws WrongNumberOfParams, InterruptedException, ExecutionException {
+    public static void main( String[] args ) throws WrongNumberOfParams, InterruptedException, ExecutionException, IOException {
 
         //  ip do servidor mosquitto
 
@@ -196,6 +197,69 @@ public class LuaTaskExecutor {
         }
 
         System.out.println("Finished");
+
+        // TODO aqui, randomly selected a client and export to excel (in first tab, per message). on another tab, put the average of total messages
+        WorkbookCreator workbookCreator = new WorkbookCreator();
+
+        Report report = buildReportHeader();
+
+        buildReport( null, report );
+
+        workbookCreator.create( report, "path" );
+
+    }
+
+    private static Report buildReportHeader(){
+        Report report = new Report();
+
+        List<String> headers = new ArrayList<String>() {
+            /**
+             *
+             */
+            private static final long serialVersionUID = -899730739044720212L;
+
+            {
+                add("Bad Practice ID");
+                add("Bad Practice Name");
+                add("Class");
+                add("Source");
+            }
+        };
+
+        report.setHeaders(headers);
+
+        return report;
+    }
+
+    private static void buildReport(List<Double> results, Report report) {
+
+//            results.add(result);
+//
+//            List<String> elementsInvolved = result
+//                    .getElementResults()
+//                    .stream()
+//                    .map( p -> p.getElement().getName() )
+//                    .collect(Collectors.toList());
+//
+//            String className = null;
+//            if(parsedObject.getTypes().size() > 1){
+//                List<String> list = parsedObject.getTypes().stream().map(p->p.getNameAsString()).collect(Collectors.toList());
+//                className = String.join(",",list);
+//            }else{
+//                className = parsedObject.getTypes().get(0).getNameAsString();
+//            }
+//
+//            String elements = String.join(",", elementsInvolved);
+//
+//            //Mount report line
+//            List<String> line = new ArrayList<String>();
+//
+//            line.add( practice.getNumber().toString() );
+//            line.add( practice.getName() );
+//            line.add( className );
+//            line.add( elements );
+//
+//            report.addLine(line);
 
     }
 
