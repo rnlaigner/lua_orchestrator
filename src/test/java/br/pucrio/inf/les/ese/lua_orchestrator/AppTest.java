@@ -1,8 +1,8 @@
 package br.pucrio.inf.les.ese.lua_orchestrator;
 
-import static org.junit.Assert.assertTrue;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for simple App.
