@@ -90,4 +90,5 @@ local.properties
 *.iml
 .idea
 
-.xls
+*.xls
+*.xls#

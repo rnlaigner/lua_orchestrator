@@ -83,7 +83,8 @@ end
 
 -- TODO enquanto houver msgs a receber, devo chamar o handler
 
-
+error_message = mqtt_client:handler()
+-- necessario para assim receber todas as mensagens
 socket.sleep(1)
 error_message = mqtt_client:handler()
 

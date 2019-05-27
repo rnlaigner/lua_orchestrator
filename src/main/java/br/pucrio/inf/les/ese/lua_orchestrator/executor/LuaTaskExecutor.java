@@ -130,8 +130,14 @@ public class LuaTaskExecutor {
 
                 for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
 
-                    String time = result.get(j+2);
-                    times.add(time);
+                    //try{
+                        String time = result.get(j+2);
+                        times.add(time);
+                    //} catch(IndexOutOfBoundsException e){
+                    //    System.out.println("dededededed");
+                    //}
+
+
 
                 }
 
@@ -153,8 +159,6 @@ public class LuaTaskExecutor {
 
             String client_name = client.getKey();
 
-            // Map<String,List<String>> client_of_client_map = client.getValue();
-
             List<Double> sum_of_client = new ArrayList<Double>() {{
                 for(int i = 0; i < numberOfMsgs; i++){
                     add(0.0);
@@ -170,17 +174,22 @@ public class LuaTaskExecutor {
 
                 List<String> times_for_client_of_client = client_of_client.getValue().get( client_name );
 
-                int idx = 0;
+                // verifica se estao no mesmo topico
+                if(times_for_client_of_client != null) {
 
-                for( String time : times_for_client_of_client ){
+                    int idx = 0;
 
-                    Double time_d = Double.valueOf( time );
+                    for (String time : times_for_client_of_client) {
 
-                    Double currValue = sum_of_client.get( idx );
+                        Double time_d = Double.valueOf(time);
 
-                    sum_of_client.set( idx, currValue + time_d );
+                        Double currValue = sum_of_client.get(idx);
 
-                    idx++;
+                        sum_of_client.set(idx, currValue + time_d);
+
+                        idx++;
+
+                    }
 
                 }
 
@@ -189,9 +198,17 @@ public class LuaTaskExecutor {
             // aqui faco a media para cada mensagem enviada pelo cliente atual da iteracao
             List<Double> average_time_list = new ArrayList<>(numberOfMsgs);
 
+            Integer numberOfClientsForAvg = numberOfClients;
+
+            // should consider strategy
+            if (topicStrategy.equals(TopicStrategy.ONE_TOPIC_PER_TEN)){
+                Integer r = numberOfClients / 10;
+                numberOfClientsForAvg = numberOfClients / r;
+            }
+
             for( int i = 0; i < numberOfMsgs; i++ ){
 
-                Double value = sum_of_client.get(i) / (numberOfClients - 1);
+                Double value = sum_of_client.get(i) / (numberOfClientsForAvg - 1);
 
                 average_time_list.add( i, value );
 
@@ -244,7 +261,7 @@ public class LuaTaskExecutor {
         // me baseio pelos dados de um cliente... o primeiro!
         List<Double> client_average_time_list = results.get(client_name);
 
-        for(int i = 0; i < results.size(); i++ ){
+        for(int i = 0; i < client_average_time_list.size(); i++ ){
 
             //Mount line
             List<String> line = new ArrayList<String>();
