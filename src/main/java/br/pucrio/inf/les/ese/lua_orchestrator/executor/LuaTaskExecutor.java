@@ -1,4 +1,4 @@
-package br.pucrio.inf.les.ese.lua_orchestrator;
+package br.pucrio.inf.les.ese.lua_orchestrator.executor;
 
 import br.pucrio.inf.les.ese.lua_orchestrator.exception.WrongNumberOfParams;
 import br.pucrio.inf.les.ese.lua_orchestrator.queue.TopicStrategy;
@@ -8,9 +8,11 @@ import br.pucrio.inf.les.ese.lua_orchestrator.report.WorkbookCreator;
 import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 public class LuaTaskExecutor {
 
@@ -79,25 +81,28 @@ public class LuaTaskExecutor {
 
             StringBuilder sb = new StringBuilder( ip );
 
-            sb.append(" ").append( port ).append(" ").append(" ").append( num_messages ).append( payload_size ).append( wait_per_message ).append(" ");
+            sb.append(" ").append( port ).append(" ").append( num_messages ).append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
 
             String paramsBase = sb.toString();
 
-            String currentTopic = topic + "_0";
+            Integer tail = 0;
 
-            for(int i = 1; i <= numberOfClients; i++){
+            String currentTopic;
+
+            for(int i = 0; i < numberOfClients; i++){
 
                 Double r = Double.valueOf(i) % 10;
 
-                if ( r == 0 ){
-                    currentTopic = topic + "_" + r.intValue();
+                if(r == 0 && i != 0){
+                    tail++;
                 }
+
+                currentTopic = topic + "_" + tail;
 
                 String params = paramsBase + currentTopic + " " + "client_" + i;
 
                 LuaTask luaTask = new LuaTask(params);
 
-                //executor.execute( luaTask );
                 luaTasks.add( luaTask );
 
             }
