@@ -3,6 +3,7 @@ package br.pucrio.inf.les.ese.lua_orchestrator;
 import br.pucrio.inf.les.ese.lua_orchestrator.exception.WrongNumberOfParams;
 import br.pucrio.inf.les.ese.lua_orchestrator.queue.TopicStrategy;
 import br.pucrio.inf.les.ese.lua_orchestrator.report.Report;
+import br.pucrio.inf.les.ese.lua_orchestrator.report.Workbook;
 import br.pucrio.inf.les.ese.lua_orchestrator.report.WorkbookCreator;
 import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 
@@ -198,68 +199,71 @@ public class LuaTaskExecutor {
 
         System.out.println("Finished");
 
-        // TODO aqui, randomly selected a client and export to excel (in first tab, per message). on another tab, put the average of total messages
         WorkbookCreator workbookCreator = new WorkbookCreator();
 
-        Report report = buildReportHeader();
+        Report report = buildReport(  client_average_time_map  );
 
-        buildReport( null, report );
-
-        workbookCreator.create( report, "path" );
+        workbookCreator.create( report, null );
 
     }
 
-    private static Report buildReportHeader(){
+    private static Report buildReport( Map<String,List<Double>> results ) {
+
         Report report = new Report();
 
-        List<String> headers = new ArrayList<String>() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -899730739044720212L;
+        Workbook workbook_1 = new Workbook();
+        workbook_1.setName("Average per message");
 
+        List<String> headers_1 = new ArrayList<String>() {
             {
-                add("Bad Practice ID");
-                add("Bad Practice Name");
-                add("Class");
-                add("Source");
+                add("Client");
+                add("Message Index");
+                add("Average Time");
             }
         };
+        workbook_1.setHeaders(headers_1);
 
-        report.setHeaders(headers);
+        Workbook workbook_2 = new Workbook();
+        workbook_2.setName("Total Average");
+
+        List<String> headers_2 = new ArrayList<String>() {
+            {
+                add("Client");
+                add("Total Average Time");
+            }
+        };
+        workbook_2.setHeaders(headers_2);
+
+        String client_name = "client_0";
+
+        // me baseio pelos dados de um cliente... o primeiro!
+        List<Double> client_average_time_list = results.get(client_name);
+
+        for(int i = 0; i < results.size(); i++ ){
+
+            //Mount line
+            List<String> line = new ArrayList<String>();
+
+            line.add( client_name );
+            line.add(String.valueOf(i+1));
+            line.add( String.valueOf(client_average_time_list.get(i)));
+
+            workbook_1.addLine( line );
+
+        }
+
+        List<String> line = new ArrayList<String>();
+        line.add(client_name);
+        Double average_total = client_average_time_list.stream().mapToDouble(Double::doubleValue).sum() / client_average_time_list.size();
+        line.add( String.valueOf( average_total ) );
+
+        workbook_2.addLine(line);
+
+        report.addWorkbook( workbook_1 );
+        report.addWorkbook( workbook_2 );
+        report.setName("inf2545");
 
         return report;
-    }
-
-    private static void buildReport(List<Double> results, Report report) {
-
-//            results.add(result);
-//
-//            List<String> elementsInvolved = result
-//                    .getElementResults()
-//                    .stream()
-//                    .map( p -> p.getElement().getName() )
-//                    .collect(Collectors.toList());
-//
-//            String className = null;
-//            if(parsedObject.getTypes().size() > 1){
-//                List<String> list = parsedObject.getTypes().stream().map(p->p.getNameAsString()).collect(Collectors.toList());
-//                className = String.join(",",list);
-//            }else{
-//                className = parsedObject.getTypes().get(0).getNameAsString();
-//            }
-//
-//            String elements = String.join(",", elementsInvolved);
-//
-//            //Mount report line
-//            List<String> line = new ArrayList<String>();
-//
-//            line.add( practice.getNumber().toString() );
-//            line.add( practice.getName() );
-//            line.add( className );
-//            line.add( elements );
-//
-//            report.addLine(line);
 
     }
 

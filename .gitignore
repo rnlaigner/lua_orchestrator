@@ -39,7 +39,7 @@ local.properties
 .loadpath
 .recommenders
 .classpath
-.project
+.name
 
 # External tool builders
 .externalToolBuilders/
@@ -66,7 +66,7 @@ local.properties
 .target
 
 # Tern plugin
-.tern-project
+.tern-name
 
 # TeXlipse plugin
 .texlipse
@@ -89,3 +89,5 @@ local.properties
 
 *.iml
 .idea
+
+.xls

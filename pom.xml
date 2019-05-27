@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<name xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
@@ -9,11 +9,11 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>lua_orchestrator</name>
-  <!-- FIXME change it to the project's website -->
+  <!-- FIXME change it to the name's website -->
   <url>http://www.example.com</url>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <name.build.sourceEncoding>UTF-8</name.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
 
@@ -99,10 +99,10 @@
           <version>3.7.1</version>
         </plugin>
         <plugin>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <artifactId>maven-name-info-reports-plugin</artifactId>
           <version>3.0.0</version>
         </plugin>
       </plugins>
     </pluginManagement>
   </build>
-</project>
+</name>

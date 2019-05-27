@@ -15,36 +15,46 @@ import java.time.temporal.ChronoField;
 public class WorkbookCreator implements IWorkbookCreator {
 
 	@Override
-	public void create(Report report, String outputPath) throws IOException, FileNotFoundException {
-		
+	public void create(Report report, String outputPath) throws IOException {
+
 		Workbook wb = new HSSFWorkbook();
-		Sheet sheet = wb.createSheet(report.getProject());
 
-		// Create the header
-		Row headerRow = sheet.createRow((short)0);
-		// Put values
-		for(int i=0;i<report.getHeaders().size();i++){
-			Cell cell = headerRow.createCell(i);
-			cell.setCellValue(report.getHeaders().get(i));
-		}
+		for( br.pucrio.inf.les.ese.lua_orchestrator.report.Workbook workbook : report.getWorkbooks()){
 
-		// Put results now
-		for(int i=0;i<report.getLines().size();i++){
-			int index = i + 1;
-			
-			Row row = sheet.createRow((short)index);
-			
-			for(int column=0;column<report.getLines().get(i).size();column++){				
-				String cellValue = report.getLines().get(i).get(column);
-				row.createCell(column).setCellValue(cellValue);
+			Sheet sheet = wb.createSheet(workbook.getName());
+
+			// Create the header
+			Row headerRow = sheet.createRow((short)0);
+			// Put values
+			for(int i=0;i<workbook.getHeaders().size();i++){
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(workbook.getHeaders().get(i));
 			}
+
+			// Put results now
+			for(int i=0;i<workbook.getLines().size();i++){
+				int index = i + 1;
+
+				Row row = sheet.createRow((short)index);
+
+				for(int column=0;column<workbook.getLines().get(i).size();column++){
+					String cellValue = workbook.getLines().get(i).get(column);
+					row.createCell(column).setCellValue(cellValue);
+				}
+			}
+
 		}
-		
-		String filename = buildFilename(outputPath,report.getProject());
+
+		if(outputPath == null){
+			outputPath = System.getProperty("user.dir");
+		}
+
+		String filename = buildFilename(outputPath,report.getName());
 
 		// Write the output to a file
 		FileOutputStream fileOut = new FileOutputStream(filename);
 		wb.write(fileOut);
+
 		fileOut.close();
 		
 		wb.close();
