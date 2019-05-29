@@ -28,6 +28,13 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Log -->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
     <!-- Apache POI -->
     <dependency>
       <groupId>org.apache.poi</groupId>

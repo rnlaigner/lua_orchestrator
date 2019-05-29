@@ -6,6 +6,7 @@ import br.pucrio.inf.les.ese.lua_orchestrator.report.Report;
 import br.pucrio.inf.les.ese.lua_orchestrator.report.Workbook;
 import br.pucrio.inf.les.ese.lua_orchestrator.report.WorkbookCreator;
 import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public class LuaTaskExecutor {
+
+    final static Logger logger = Logger.getLogger(LuaTaskExecutor.class);
 
     public static void main( String[] args ) throws WrongNumberOfParams, InterruptedException, ExecutionException, IOException {
 
@@ -130,14 +133,8 @@ public class LuaTaskExecutor {
 
                 for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
 
-                    //try{
                         String time = result.get(j+2);
                         times.add(time);
-                    //} catch(IndexOutOfBoundsException e){
-                    //    System.out.println("dededededed");
-                    //}
-
-
 
                 }
 
@@ -150,6 +147,8 @@ public class LuaTaskExecutor {
         }
 
         executor.shutdown();
+
+        logger.info( "executor is down" );
 
         Map<String,List<Double>> client_average_time_map = new HashMap<>();
 
@@ -164,6 +163,9 @@ public class LuaTaskExecutor {
                     add(0.0);
                 }
             }};
+
+            // lista que armazena o time do envio do cliente
+            List<String> time_sent_by_client = client.getValue().get( client_name );
 
             // for each clients of client, get its respective time per message
             for( Map.Entry<String,Map<String,List<String>>> client_of_client : clients_client_elapsed_time_map.entrySet() ){
@@ -181,7 +183,7 @@ public class LuaTaskExecutor {
 
                     for (String time : times_for_client_of_client) {
 
-                        Double time_d = Double.valueOf(time);
+                        Double time_d = Double.valueOf(time) - Double.valueOf( time_sent_by_client.get(idx) );
 
                         Double currValue = sum_of_client.get(idx);
 
@@ -203,15 +205,12 @@ public class LuaTaskExecutor {
             // should consider strategy
             if (topicStrategy.equals(TopicStrategy.ONE_TOPIC_PER_TEN)){
                 Integer r = numberOfClients / 10;
-                numberOfClientsForAvg = numberOfClients / r;
+                numberOfClientsForAvg = r == 0 ? numberOfClients : numberOfClients / r;
             }
 
             for( int i = 0; i < numberOfMsgs; i++ ){
-
                 Double value = sum_of_client.get(i) / (numberOfClientsForAvg - 1);
-
                 average_time_list.add( i, value );
-
             }
 
             // adiciono em umap que possui o average time para cada mensagem enviada a partir deste cliente

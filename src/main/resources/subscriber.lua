@@ -32,8 +32,6 @@ local client_name = arg[7]
 
 local publishers = {}
 
---local client_info = {}
-
 function callback(topic, message)
 
     local time = socket.gettime()
@@ -43,6 +41,10 @@ function callback(topic, message)
 
     local i_, j_ = string.find(client_part,":")
     local player_name = string.sub(client_part, j_+2, string.len(client_part)-1)
+
+    if (player_name == client_name) then
+        return
+    end
 
     if ( publishers[player_name] ) then
 
@@ -63,20 +65,19 @@ mqtt_client = MQTT.client.create(server_address, server_port, callback)
 mqtt_client:connect(client_name)
 mqtt_client:subscribe({topic})
 
---print("created MQTT client")
-
 local error_message = nil
 
 local index = 1
 
+local tbl_client = {}
+publishers[client_name] = tbl_client
+
 while (index <= number_messages) do
     error_message = mqtt_client:handler()
     socket.sleep(wait_per_message)
-    --print("publishing message")
     -- TODO use string with payload size
-    --print("publishing message: ",index)
-    --local time_sent = socket.gettime()
-    --table.insert(client_info,index,time_sent)
+    local time = socket.gettime()
+    table.insert( tbl_client, time )
     mqtt_client:publish(topic, "client: "..client_name.." | message: "..index)
     index = index + 1
 end
@@ -87,6 +88,8 @@ error_message = mqtt_client:handler()
 -- necessario para assim receber todas as mensagens
 socket.sleep(1)
 error_message = mqtt_client:handler()
+
+mqtt_client:disconnect()
 
 --  TODO break no while true ate que nao haja mais mensagens por 5 segundos...
 --while true do
