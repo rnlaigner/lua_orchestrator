@@ -65,7 +65,7 @@ public class LuaTaskExecutor {
 
             StringBuilder sb = new StringBuilder( ip );
 
-            sb.append(" ").append( port ).append(" ").append( num_messages ).append(" ").append( payload_size )
+            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages ).append(" ").append( payload_size )
             .append(" ").append( wait_per_message ).append(" ").append( topic ).append(" ");
 
             String paramsBase = sb.toString();
@@ -84,7 +84,7 @@ public class LuaTaskExecutor {
 
             StringBuilder sb = new StringBuilder( ip );
 
-            sb.append(" ").append( port ).append(" ").append( num_messages ).append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
+            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages ).append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
 
             String paramsBase = sb.toString();
 
@@ -133,8 +133,13 @@ public class LuaTaskExecutor {
 
                 for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
 
-                        String time = result.get(j+2);
+                    try {
+                        String time = result.get(j + 2);
                         times.add(time);
+                    }
+                    catch(Exception e){
+                        logger.info("Exception");
+                    }
 
                 }
 
@@ -183,7 +188,14 @@ public class LuaTaskExecutor {
 
                     for (String time : times_for_client_of_client) {
 
-                        Double time_d = Double.valueOf(time) - Double.valueOf( time_sent_by_client.get(idx) );
+                        Double time_d = 0.0;
+
+                        try {
+                            time_d = Double.valueOf(time) - Double.valueOf(time_sent_by_client.get(idx));
+                        }
+                        catch(Exception e){
+                            logger.info("Exception");
+                        }
 
                         Double currValue = sum_of_client.get(idx);
 
@@ -222,7 +234,7 @@ public class LuaTaskExecutor {
 
         WorkbookCreator workbookCreator = new WorkbookCreator();
 
-        Report report = buildReport(  client_average_time_map  );
+        Report report = buildReport( client_average_time_map );
 
         workbookCreator.create( report, null );
 
@@ -255,7 +267,12 @@ public class LuaTaskExecutor {
         };
         workbook_2.setHeaders(headers_2);
 
-        String client_name = "client_0";
+        // Pego um cliente randomly
+        Integer num_clients = results.size();
+
+        int randomNum = ThreadLocalRandom.current().nextInt(1, num_clients);
+
+        String client_name = "client_" + randomNum;
 
         // me baseio pelos dados de um cliente... o primeiro!
         List<Double> client_average_time_list = results.get(client_name);

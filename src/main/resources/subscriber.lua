@@ -9,30 +9,50 @@
 socket = require("socket")
 
 local MQTT = require("mqtt_library")
+-- MQTT.Utility.set_debug(true)
 
 -- args parser
 
 local file_path = arg[0]
 
-if #arg ~= 7 then
+if #arg ~= 8 then
   print("ERROR\n")
   print("Command line arguments required for " .. file_path .. " are described below\n")
-  print("<server_address> <server_port> <number_messages> <payload_size> <wait_per_message> <topic> <client_name>\n")
+  print("<server_address> <server_port> <number_clients> <number_messages> <payload_size> <wait_per_message> <topic> <client_name>\n")
   -- it could be os.exit(1) to terminate the host program
   return
 end
 
 local server_address = arg[1]
 local server_port = arg[2]
-local number_messages = tonumber( arg[3] )
-local payload_size = arg[4]
-local wait_per_message = tonumber(arg[5])
-local topic = arg[6]
-local client_name = arg[7]
+local number_clients = tonumber( arg[3] )
+local number_messages = tonumber( arg[4] )
+local payload_size = arg[5]
+local wait_per_message = tonumber( arg[6] )
+local topic = arg[7]
+local client_name = arg[8]
 
 local publishers = {}
 
+local can_publish = false
+
+function is_there_remaining_messages()
+    for idx, tbl in pairs(publishers) do
+        if ( #tbl < number_messages ) then
+            return true
+        end
+    end
+    return false
+end
+
 function callback(topic, message)
+
+    if( topic == "$SYS/broker/clients/connected" ) then
+        if tonumber( message ) == number_clients then
+            can_publish = true
+        end
+        return
+    end
 
     local time = socket.gettime()
 
@@ -63,41 +83,44 @@ end
 
 mqtt_client = MQTT.client.create(server_address, server_port, callback)
 mqtt_client:connect(client_name)
-mqtt_client:subscribe({topic})
+mqtt_client:subscribe({topic,"$SYS/broker/clients/connected"})
 
 local error_message = nil
 
-local index = 1
+local msg_index = 1
 
 local tbl_client = {}
-publishers[client_name] = tbl_client
 
-while (index <= number_messages) do
+while not can_publish do
+    mqtt_client:handler()
+end
+
+while (msg_index <= number_messages) do
     error_message = mqtt_client:handler()
-    socket.sleep(wait_per_message)
     -- TODO use string with payload size
     local time = socket.gettime()
     table.insert( tbl_client, time )
-    mqtt_client:publish(topic, "client: "..client_name.." | message: "..index)
-    index = index + 1
+    mqtt_client:publish(topic, "client: "..client_name.." | message: ".. msg_index)
+    msg_index = msg_index + 1
+    socket.sleep(wait_per_message)  -- seconds
 end
 
--- TODO enquanto houver msgs a receber, devo chamar o handler
+-- enquanto houver msgs a receber, devo chamar o handler
+-- para implementar isso, eu teria que iterar pela tabela publishers e verificar o tamanho do tbl alocada a tal publisher
+-- se houver algum publisher onde a tabela de mensagens recebidas for menor que numero de mensagens
+while is_there_remaining_messages() do
+    error_message = mqtt_client:handler()
+    socket.sleep(wait_per_message)  -- seconds
+    --mqtt_client:handler()
+end
 
-error_message = mqtt_client:handler()
--- necessario para assim receber todas as mensagens
-socket.sleep(1)
-error_message = mqtt_client:handler()
-
-mqtt_client:disconnect()
-
---  TODO break no while true ate que nao haja mais mensagens por 5 segundos...
---while true do
---    break
---end
+mqtt_client:unsubscribe({topic})
+mqtt_client:destroy()
 
 -- write time elapsed for each client message
 print(client_name)
+
+publishers[client_name] = tbl_client
 
 for idx, publisher_tbl in pairs(publishers) do
     for i, msg in ipairs(publisher_tbl) do
