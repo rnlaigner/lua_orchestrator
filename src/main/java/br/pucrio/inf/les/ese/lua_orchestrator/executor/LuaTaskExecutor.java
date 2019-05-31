@@ -55,7 +55,7 @@ public class LuaTaskExecutor {
 
         int numberOfClients = Integer.valueOf( num_clients );
 
-        List<Callable<List>> luaTasks = new ArrayList<Callable<List>>();
+        List<Callable> luaTasks = new ArrayList<Callable>();
 
         TopicStrategy topicStrategy = TopicStrategy.ONE_TOPIC.getName().contentEquals( strategy ) ? TopicStrategy.ONE_TOPIC : TopicStrategy.ONE_TOPIC_PER_TEN ;
 
@@ -65,8 +65,8 @@ public class LuaTaskExecutor {
 
             StringBuilder sb = new StringBuilder( ip );
 
-            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages ).append(" ").append( payload_size )
-            .append(" ").append( wait_per_message ).append(" ").append( topic ).append(" ");
+            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages )
+                    .append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ").append( topic ).append(" ");
 
             String paramsBase = sb.toString();
 
@@ -84,7 +84,11 @@ public class LuaTaskExecutor {
 
             StringBuilder sb = new StringBuilder( ip );
 
-            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages ).append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
+            // Seto corretamente o numero de clientes que devem ser aguardados no topico
+            //Integer num_clients_ONE_TOPIC_PER_TEN = Integer.valueOf( num_clients )
+
+            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages )
+                    .append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
 
             String paramsBase = sb.toString();
 
@@ -112,7 +116,15 @@ public class LuaTaskExecutor {
 
         }
 
-        List<Future<List>> futures = executor.invokeAll( luaTasks );
+        // https://github.com/eclipse/mosquitto/issues/1177
+        //List<Future<List>> futures = executor.invokeAll( luaTasks );
+        List<Future<List>> futures = new ArrayList<>();
+
+        for(Callable task : luaTasks){
+            futures.add( executor.submit(task) );
+            // avoid issue on mosquitto assigning uniqueID based on system time
+            Thread.sleep(100);
+        }
 
         Map<String, Map<String,List<String>>> clients_client_elapsed_time_map = new HashMap<>();
 
@@ -122,7 +134,13 @@ public class LuaTaskExecutor {
 
             List<String> result = (List<String>) future.get();
 
-            String client = result.get(0);
+            String client = null;
+            try {
+                client = result.get(0);
+            }
+            catch(IndexOutOfBoundsException e){
+                executor.shutdown();
+            }
 
             Map<String,List<String>> client_elapsed_time_map = new HashMap<>();
 
@@ -270,7 +288,7 @@ public class LuaTaskExecutor {
         // Pego um cliente randomly
         Integer num_clients = results.size();
 
-        int randomNum = ThreadLocalRandom.current().nextInt(1, num_clients);
+        int randomNum = ThreadLocalRandom.current().nextInt(0, num_clients-1);
 
         String client_name = "client_" + randomNum;
 

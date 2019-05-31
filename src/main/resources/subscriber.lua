@@ -9,7 +9,6 @@
 socket = require("socket")
 
 local MQTT = require("mqtt_library")
--- MQTT.Utility.set_debug(true)
 
 -- args parser
 
@@ -110,23 +109,26 @@ end
 -- se houver algum publisher onde a tabela de mensagens recebidas for menor que numero de mensagens
 while is_there_remaining_messages() do
     error_message = mqtt_client:handler()
-    socket.sleep(wait_per_message)  -- seconds
+    --socket.sleep(wait_per_message)  -- seconds
     --mqtt_client:handler()
 end
 
-mqtt_client:unsubscribe({topic})
+mqtt_client:unsubscribe({topic,"$SYS/broker/clients/connected"})
 mqtt_client:destroy()
 
--- write time elapsed for each client message
+-- write client name
 print(client_name)
-
 publishers[client_name] = tbl_client
 
-for idx, publisher_tbl in pairs(publishers) do
-    for i, msg in ipairs(publisher_tbl) do
-        print(idx)
-        print(i)
-        print(msg)
-    end
-end
+-- TODO jogar em um arquivo e retornar o nome do arquivo para leitura
 
+-- write time elapsed for each client message
+--for idx, publisher_tbl in pairs(publishers) do
+--    for i, msg in ipairs(publisher_tbl) do
+--        print(idx)
+--        print(i)
+--        print(msg)
+--    end
+--end
+
+--os.exit(1)
