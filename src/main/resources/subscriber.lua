@@ -22,14 +22,14 @@ if #arg ~= 8 then
   return
 end
 
-local server_address = arg[1]
-local server_port = arg[2]
-local number_clients = tonumber( arg[3] )
-local number_messages = tonumber( arg[4] )
-local payload_size = arg[5]
-local wait_per_message = tonumber( arg[6] )
-local topic = arg[7]
-local client_name = arg[8]
+local server_address = arg[1] or "192.168.244.128"
+local server_port = arg[2] or 3000
+local number_clients = tonumber( arg[3] ) or 3
+local number_messages = tonumber( arg[4] ) or 10
+local payload_size = arg[5] or 100
+local wait_per_message = tonumber( arg[6] ) or 1
+local topic = arg[7] or "topic_test"
+local client_name = arg[8] or tostring( math.random() )
 
 local publishers = {}
 
@@ -88,47 +88,37 @@ local error_message = nil
 
 local msg_index = 1
 
-local tbl_client = {}
-
 while not can_publish do
     mqtt_client:handler()
 end
 
+local start_time = socket.gettime()
+
 while (msg_index <= number_messages) do
     error_message = mqtt_client:handler()
     -- TODO use string with payload size
-    local time = socket.gettime()
-    table.insert( tbl_client, time )
-    mqtt_client:publish(topic, "client: "..client_name.." | message: ".. msg_index)
+    --local time = socket.gettime()
+    --table.insert( tbl_client, time )
+    mqtt_client:publish(topic, "client: "..client_name.." | message: ".. tostring(msg_index))
     msg_index = msg_index + 1
-    socket.sleep(wait_per_message)  -- seconds
+    --socket.sleep(wait_per_message)  -- seconds
 end
 
 -- enquanto houver msgs a receber, devo chamar o handler
--- para implementar isso, eu teria que iterar pela tabela publishers e verificar o tamanho do tbl alocada a tal publisher
--- se houver algum publisher onde a tabela de mensagens recebidas for menor que numero de mensagens
 while is_there_remaining_messages() do
     error_message = mqtt_client:handler()
-    --socket.sleep(wait_per_message)  -- seconds
-    --mqtt_client:handler()
+    socket.sleep(0.1)  -- seconds
 end
 
 mqtt_client:unsubscribe({topic,"$SYS/broker/clients/connected"})
 mqtt_client:destroy()
 
+local finish_time = socket.gettime()
+
 -- write client name
 print(client_name)
-publishers[client_name] = tbl_client
-
--- TODO jogar em um arquivo e retornar o nome do arquivo para leitura
-
--- write time elapsed for each client message
---for idx, publisher_tbl in pairs(publishers) do
---    for i, msg in ipairs(publisher_tbl) do
---        print(idx)
---        print(i)
---        print(msg)
---    end
---end
+print(start_time)
+print(finish_time)
+print(finish_time - start_time)
 
 --os.exit(1)

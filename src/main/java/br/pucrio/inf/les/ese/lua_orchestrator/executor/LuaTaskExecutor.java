@@ -9,10 +9,7 @@ import br.pucrio.inf.les.ese.lua_orchestrator.task.LuaTask;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class LuaTaskExecutor {
@@ -22,18 +19,12 @@ public class LuaTaskExecutor {
     public static void main( String[] args ) throws WrongNumberOfParams, InterruptedException, ExecutionException, IOException {
 
         //  ip do servidor mosquitto
-
         //  port do servidor mosquitto
-
         //  number of clients
-
         //  topicStrategy: ONE_TOPIC, ONE_TOPIC_PER_TEN
-
         //  payload size
-
         //  wait per message
-
-        if(args.length < 8){
+        if (args.length < 8) {
             throw new WrongNumberOfParams("<server_address> <server_port> <number_clients> <number_messages> <topic_strategy> <payload_size> <wait_per_message> <topic>");
         }
 
@@ -53,42 +44,42 @@ public class LuaTaskExecutor {
 
         String topic = args[7];
 
-        int numberOfClients = Integer.valueOf( num_clients );
+        int numberOfClients = Integer.valueOf(num_clients);
 
         List<Callable> luaTasks = new ArrayList<Callable>();
 
-        TopicStrategy topicStrategy = TopicStrategy.ONE_TOPIC.getName().contentEquals( strategy ) ? TopicStrategy.ONE_TOPIC : TopicStrategy.ONE_TOPIC_PER_TEN ;
+        TopicStrategy topicStrategy = TopicStrategy.ONE_TOPIC.getName().contentEquals(strategy) ? TopicStrategy.ONE_TOPIC : TopicStrategy.ONE_TOPIC_PER_TEN;
 
         ExecutorService executor = Executors.newFixedThreadPool(numberOfClients);
 
-        if ( topicStrategy.equals(TopicStrategy.ONE_TOPIC) ){
+        if (topicStrategy.equals(TopicStrategy.ONE_TOPIC)) {
 
-            StringBuilder sb = new StringBuilder( ip );
+            StringBuilder sb = new StringBuilder(ip);
 
-            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages )
-                    .append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ").append( topic ).append(" ");
+            sb.append(" ").append(port).append(" ").append(num_clients).append(" ").append(num_messages)
+                    .append(" ").append(payload_size).append(" ").append(wait_per_message).append(" ").append(topic).append(" ");
 
             String paramsBase = sb.toString();
 
-            for(int i = 0; i < numberOfClients; i++){
+            for (int i = 0; i < numberOfClients; i++) {
 
-                String params = paramsBase + "client_" + i;
+                String params = paramsBase + "client" + i;
 
                 LuaTask luaTask = new LuaTask(params);
 
-                luaTasks.add( luaTask );
+                luaTasks.add(luaTask);
 
             }
 
         } else {
 
-            StringBuilder sb = new StringBuilder( ip );
+            StringBuilder sb = new StringBuilder(ip);
 
             // Seto corretamente o numero de clientes que devem ser aguardados no topico
             //Integer num_clients_ONE_TOPIC_PER_TEN = Integer.valueOf( num_clients )
 
-            sb.append(" ").append( port ).append(" ").append( num_clients ).append(" ").append( num_messages )
-                    .append(" ").append( payload_size ).append(" ").append( wait_per_message ).append(" ");
+            sb.append(" ").append(port).append(" ").append(num_clients).append(" ").append(num_messages)
+                    .append(" ").append(payload_size).append(" ").append(wait_per_message).append(" ");
 
             String paramsBase = sb.toString();
 
@@ -96,21 +87,21 @@ public class LuaTaskExecutor {
 
             String currentTopic;
 
-            for(int i = 0; i < numberOfClients; i++){
+            for (int i = 0; i < numberOfClients; i++) {
 
                 Double r = Double.valueOf(i) % 10;
 
-                if(r == 0 && i != 0){
+                if (r == 0 && i != 0) {
                     tail++;
                 }
 
                 currentTopic = topic + "_" + tail;
 
-                String params = paramsBase + currentTopic + " " + "client_" + i;
+                String params = paramsBase + currentTopic + " " + "client" + i;
 
                 LuaTask luaTask = new LuaTask(params);
 
-                luaTasks.add( luaTask );
+                luaTasks.add(luaTask);
 
             }
 
@@ -120,197 +111,100 @@ public class LuaTaskExecutor {
         //List<Future<List>> futures = executor.invokeAll( luaTasks );
         List<Future<List>> futures = new ArrayList<>();
 
-        for(Callable task : luaTasks){
-            futures.add( executor.submit(task) );
+        for (Callable task : luaTasks) {
+            futures.add(executor.submit(task));
             // avoid issue on mosquitto assigning uniqueID based on system time
             Thread.sleep(100);
         }
 
-        Map<String, Map<String,List<String>>> clients_client_elapsed_time_map = new HashMap<>();
+        // Analysis per client time elapsed
 
-        int numberOfMsgs = Integer.valueOf( num_messages );
+        Map<String, List<String>> client_elapsed_time_map = new HashMap<>();
 
-        for( Future future : futures ){
+        for( Future future : futures ) {
 
             List<String> result = (List<String>) future.get();
 
-            String client = null;
+            String client, start_time, finish_time, elapsed_time = null;
             try {
                 client = result.get(0);
-            }
-            catch(IndexOutOfBoundsException e){
+                start_time = result.get(1);
+                finish_time = result.get(2);
+                elapsed_time = result.get(3);
+
+                client_elapsed_time_map.put( client, Arrays.asList(start_time, finish_time, elapsed_time) );
+
+            } catch (IndexOutOfBoundsException e) {
                 executor.shutdown();
             }
-
-            Map<String,List<String>> client_elapsed_time_map = new HashMap<>();
-
-            for( int i = 1; i < result.size(); i = i + (numberOfMsgs * 3) ){
-
-                String client_client = result.get(i);
-                List<String> times = new ArrayList<>();
-
-                for( int j = i; j < i + (numberOfMsgs * 3); j = j + 3){
-
-                    try {
-                        String time = result.get(j + 2);
-                        times.add(time);
-                    }
-                    catch(Exception e){
-                        logger.info("Exception");
-                    }
-
-                }
-
-                client_elapsed_time_map.put( client_client, times );
-
-            }
-
-            clients_client_elapsed_time_map.put( client,  client_elapsed_time_map );
 
         }
 
         executor.shutdown();
 
-        logger.info( "executor is down" );
-
-        Map<String,List<Double>> client_average_time_map = new HashMap<>();
-
-        //  realiza o calculo da media de tempo gasto pelo servidor e realizar o output do dado agregado
-
-        for( Map.Entry<String,Map<String,List<String>>> client : clients_client_elapsed_time_map.entrySet() ){
-
-            String client_name = client.getKey();
-
-            List<Double> sum_of_client = new ArrayList<Double>() {{
-                for(int i = 0; i < numberOfMsgs; i++){
-                    add(0.0);
-                }
-            }};
-
-            // lista que armazena o time do envio do cliente
-            List<String> time_sent_by_client = client.getValue().get( client_name );
-
-            // for each clients of client, get its respective time per message
-            for( Map.Entry<String,Map<String,List<String>>> client_of_client : clients_client_elapsed_time_map.entrySet() ){
-
-                if( client_of_client.getKey().contentEquals( client_name ) ){
-                    continue;
-                }
-
-                List<String> times_for_client_of_client = client_of_client.getValue().get( client_name );
-
-                // verifica se estao no mesmo topico
-                if(times_for_client_of_client != null) {
-
-                    int idx = 0;
-
-                    for (String time : times_for_client_of_client) {
-
-                        Double time_d = 0.0;
-
-                        try {
-                            time_d = Double.valueOf(time) - Double.valueOf(time_sent_by_client.get(idx));
-                        }
-                        catch(Exception e){
-                            logger.info("Exception");
-                        }
-
-                        Double currValue = sum_of_client.get(idx);
-
-                        sum_of_client.set(idx, currValue + time_d);
-
-                        idx++;
-
-                    }
-
-                }
-
-            }
-
-            // aqui faco a media para cada mensagem enviada pelo cliente atual da iteracao
-            List<Double> average_time_list = new ArrayList<>(numberOfMsgs);
-
-            Integer numberOfClientsForAvg = numberOfClients;
-
-            // should consider strategy
-            if (topicStrategy.equals(TopicStrategy.ONE_TOPIC_PER_TEN)){
-                Integer r = numberOfClients / 10;
-                numberOfClientsForAvg = r == 0 ? numberOfClients : numberOfClients / r;
-            }
-
-            for( int i = 0; i < numberOfMsgs; i++ ){
-                Double value = sum_of_client.get(i) / (numberOfClientsForAvg - 1);
-                average_time_list.add( i, value );
-            }
-
-            // adiciono em umap que possui o average time para cada mensagem enviada a partir deste cliente
-            client_average_time_map.put( client_name, average_time_list );
-
-        }
-
         System.out.println("Finished");
 
         WorkbookCreator workbookCreator = new WorkbookCreator();
 
-        Report report = buildReport( client_average_time_map );
+        Report report = buildReport( client_elapsed_time_map );
 
         workbookCreator.create( report, null );
 
+
     }
 
-    private static Report buildReport( Map<String,List<Double>> results ) {
+    private static Report buildReport( Map<String, List<String>> results ) {
 
         Report report = new Report();
 
         Workbook workbook_1 = new Workbook();
-        workbook_1.setName("Average per message");
+        workbook_1.setName("Time Elapsed Per Client");
 
         List<String> headers_1 = new ArrayList<String>() {
             {
                 add("Client");
-                add("Message Index");
-                add("Average Time");
+                add("Start Time");
+                add("Finish Time");
+                add("Elapsed Time");
             }
         };
         workbook_1.setHeaders(headers_1);
 
         Workbook workbook_2 = new Workbook();
-        workbook_2.setName("Total Average");
+        workbook_2.setName("Total Average Time");
 
         List<String> headers_2 = new ArrayList<String>() {
             {
-                add("Client");
                 add("Total Average Time");
             }
         };
         workbook_2.setHeaders(headers_2);
 
-        // Pego um cliente randomly
-        Integer num_clients = results.size();
+        Double sum = 0.0;
 
-        int randomNum = ThreadLocalRandom.current().nextInt(0, num_clients-1);
+        for( Map.Entry<String,List<String>> entry : results.entrySet() ) {
 
-        String client_name = "client_" + randomNum;
-
-        // me baseio pelos dados de um cliente... o primeiro!
-        List<Double> client_average_time_list = results.get(client_name);
-
-        for(int i = 0; i < client_average_time_list.size(); i++ ){
+            // me baseio pelos dados de um cliente... o primeiro!
+            List<String> time_list = entry.getValue();
 
             //Mount line
             List<String> line = new ArrayList<String>();
 
-            line.add( client_name );
-            line.add(String.valueOf(i+1));
-            line.add( String.valueOf(client_average_time_list.get(i)));
+            line.add(entry.getKey());
+            line.add(time_list.get(0));
+            line.add(time_list.get(1));
+            line.add(time_list.get(2));
 
-            workbook_1.addLine( line );
+            sum = sum + Double.valueOf(time_list.get(2));
+
+            workbook_1.addLine(line);
 
         }
 
         List<String> line = new ArrayList<String>();
-        line.add(client_name);
-        Double average_total = client_average_time_list.stream().mapToDouble(Double::doubleValue).sum() / client_average_time_list.size();
+
+        Double average_total = sum / results.size();
+
         line.add( String.valueOf( average_total ) );
 
         workbook_2.addLine(line);
