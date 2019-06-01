@@ -29,19 +29,12 @@ public class LuaTaskExecutor {
         }
 
         String ip = args[0];
-
         String port = args[1];
-
         String num_clients = args[2];
-
         String num_messages = args[3];
-
         String strategy = args[4];
-
         String payload_size = args[5];
-
         String wait_per_message = args[6];
-
         String topic = args[7];
 
         int numberOfClients = Integer.valueOf(num_clients);
@@ -74,9 +67,6 @@ public class LuaTaskExecutor {
         } else {
 
             StringBuilder sb = new StringBuilder(ip);
-
-            // Seto corretamente o numero de clientes que devem ser aguardados no topico
-            //Integer num_clients_ONE_TOPIC_PER_TEN = Integer.valueOf( num_clients )
 
             sb.append(" ").append(port).append(" ").append(num_clients).append(" ").append(num_messages)
                     .append(" ").append(payload_size).append(" ").append(wait_per_message).append(" ");
@@ -114,7 +104,7 @@ public class LuaTaskExecutor {
         for (Callable task : luaTasks) {
             futures.add(executor.submit(task));
             // avoid issue on mosquitto assigning uniqueID based on system time
-            Thread.sleep(100);
+            Thread.sleep(500);
         }
 
         // Analysis per client time elapsed

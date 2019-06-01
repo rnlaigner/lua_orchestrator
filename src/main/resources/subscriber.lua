@@ -11,7 +11,6 @@ socket = require("socket")
 local MQTT = require("mqtt_library")
 
 -- args parser
-
 local file_path = arg[0]
 
 if #arg ~= 8 then
@@ -22,14 +21,14 @@ if #arg ~= 8 then
   return
 end
 
-local server_address = arg[1] or "192.168.244.128"
-local server_port = arg[2] or 3000
-local number_clients = tonumber( arg[3] ) or 3
-local number_messages = tonumber( arg[4] ) or 10
-local payload_size = arg[5] or 100
-local wait_per_message = tonumber( arg[6] ) or 1
-local topic = arg[7] or "topic_test"
-local client_name = arg[8] or tostring( math.random() )
+local server_address = arg[1]
+local server_port = arg[2]
+local number_clients = tonumber( arg[3] )
+local number_messages = tonumber( arg[4] )
+local payload_size = arg[5]
+local wait_per_message = tonumber( arg[6] )
+local topic = arg[7]
+local client_name = arg[8]
 
 local publishers = {}
 
@@ -66,16 +65,12 @@ function callback(topic, message)
     end
 
     if ( publishers[player_name] ) then
-
         local tbl = publishers[player_name]
         table.insert( tbl, time )
-
     else
-
         local tbl = {}
         table.insert( tbl, time )
         publishers[player_name] = tbl
-
     end
 
 end
@@ -97,17 +92,19 @@ local start_time = socket.gettime()
 while (msg_index <= number_messages) do
     error_message = mqtt_client:handler()
     -- TODO use string with payload size
-    --local time = socket.gettime()
-    --table.insert( tbl_client, time )
     mqtt_client:publish(topic, "client: "..client_name.." | message: ".. tostring(msg_index))
     msg_index = msg_index + 1
-    --socket.sleep(wait_per_message)  -- seconds
 end
+
+--print("finished sending")
 
 -- enquanto houver msgs a receber, devo chamar o handler
 while is_there_remaining_messages() do
     error_message = mqtt_client:handler()
+
     socket.sleep(0.1)  -- seconds
+
+    --print("waiting for messages...")
 end
 
 mqtt_client:unsubscribe({topic,"$SYS/broker/clients/connected"})
