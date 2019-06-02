@@ -10,10 +10,13 @@ import java.util.concurrent.Callable;
 
 public class LuaTask implements Callable<List> {
 
-    public String params;
+    private final String params;
 
-    public LuaTask(String params) {
+    private final String subscriberFile;
+
+    public LuaTask(String params, boolean wait) {
         this.params = params;
+        this.subscriberFile = wait ? "subscriber.lua" : "subscriber_no_wait.lua";
     }
 
     @Override
@@ -46,7 +49,7 @@ public class LuaTask implements Callable<List> {
 
             String luaAbsoluteCmd = absolutePathToProject + luaCmd;
 
-            String subscriberLua = absolutePathToProject + "subscriber.lua" + " " + params;
+            String subscriberLua = absolutePathToProject + subscriberFile + " " + params;
 
             String toExec = luaAbsoluteCmd + " " + subscriberLua;
 

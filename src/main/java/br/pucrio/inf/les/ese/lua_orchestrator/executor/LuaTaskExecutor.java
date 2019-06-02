@@ -25,7 +25,7 @@ public class LuaTaskExecutor {
         //  payload size
         //  wait per message
         if (args.length < 8) {
-            throw new WrongNumberOfParams("<server_address> <server_port> <number_clients> <number_messages> <topic_strategy> <payload_size> <wait_per_message> <topic>");
+            throw new WrongNumberOfParams("<server_address> <server_port> <number_clients> <number_messages> <topic_strategy> <payload_size> <wait_per_message> <topic> <client_wait_for_messages>");
         }
 
         String ip = args[0];
@@ -36,8 +36,11 @@ public class LuaTaskExecutor {
         String payload_size = args[5];
         String wait_per_message = args[6];
         String topic = args[7];
+        String client_wait_for_messages = args[8];
 
         int numberOfClients = Integer.valueOf(num_clients);
+
+        boolean clientWaitForMessages = Boolean.getBoolean(client_wait_for_messages);
 
         List<Callable> luaTasks = new ArrayList<Callable>();
 
@@ -55,13 +58,9 @@ public class LuaTaskExecutor {
             String paramsBase = sb.toString();
 
             for (int i = 0; i < numberOfClients; i++) {
-
                 String params = paramsBase + "client" + i;
-
-                LuaTask luaTask = new LuaTask(params);
-
+                LuaTask luaTask = new LuaTask( params, clientWaitForMessages );
                 luaTasks.add(luaTask);
-
             }
 
         } else {
@@ -89,7 +88,7 @@ public class LuaTaskExecutor {
 
                 String params = paramsBase + currentTopic + " " + "client" + i;
 
-                LuaTask luaTask = new LuaTask(params);
+                LuaTask luaTask = new LuaTask( params, clientWaitForMessages );
 
                 luaTasks.add(luaTask);
 
